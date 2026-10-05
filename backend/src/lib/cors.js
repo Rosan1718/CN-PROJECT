@@ -1,4 +1,14 @@
-const configuredOrigins = (process.env.FRONTEND_URL || "http://localhost:5173")
+const configuredOriginValues = [
+  process.env.FRONTEND_URL,
+  // Render serves the frontend and API from this same public origin in the
+  // single-service deployment. Render provides this value at runtime.
+  process.env.RENDER_EXTERNAL_URL,
+].filter(Boolean);
+
+if (!configuredOriginValues.length) configuredOriginValues.push("http://localhost:5173");
+
+const configuredOrigins = configuredOriginValues
+  .join(",")
   .split(",")
   .map((origin) => origin.trim().replace(/\/+$/, ""))
   .filter(Boolean);
@@ -35,5 +45,7 @@ export function frontendCorsOrigin(origin, callback) {
     return;
   }
 
-  callback(new Error("Origin is not allowed by CORS"));
+  // Reject this origin without turning a normal cross-origin browser request
+  // into an application error and noisy stack trace.
+  callback(null, false);
 }
